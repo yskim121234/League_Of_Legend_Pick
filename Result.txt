@@ -1,0 +1,8 @@
+{Blue Team Ban}
+Bard, RekSai, Rumble, Quinn, Ryze
+{Blue Team Pick}
+Aatrox, Swain, Lulu, Akali, Rakan
+{Red Team Ban}
+Jhin, DrMundo, Anivia, ChoGath, Rell
+{Red Team Pick}
+Evelynn, Riven, Viktor, Thresh, Zyra
