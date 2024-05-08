@@ -1,5 +1,8 @@
 import json
+import os
 from PIL import ImageTk, Image
+import tkinter
+import glob
 #챔피언 정보 파일 읽어오고 문자열로 캐스팅
 with open('./dragontail-14.7.1/14.7.1/data/en_US/champion.json', encoding='UTF-8') as Champion_Info:
     Champion_Info = str(json.load(Champion_Info))
@@ -9,6 +12,7 @@ class File_Loader:
 
     def __init__(self):
         self.Champions = []
+        self.Set_Champions()
 
     def Set_Champions(self):
 
@@ -68,3 +72,83 @@ class File_Loader:
     def Get_Champion_Image(self, index, size=80):
         return ImageTk.PhotoImage(Image.open(self.Get_Champion_Image_Path(index)).resize((size, size)))
     
+    def Get_Champion_Skin_Dict(self, index):
+        if index >= len(self.Champions) or index <0:
+            print("[Get_Champion_Skin_Dict]:Index Value Error")
+            return False
+        path = './dragontail-14.7.1/img/champion/centered/'
+        file_list = os.listdir(path)  
+        skin_dict = {}
+        skin_list = []
+        
+        for f in file_list:
+            name = self.Champions[index].lower()
+            if f.find(name+'_') == 0:
+                ff = f.replace(name+'_', '')
+                ff = int(ff.replace('.png', ''))
+                skin_list.append(ff)
+        
+        skin_list.sort()
+        if len(skin_list) <= 0:
+            skin_list.append("NO SKIN")
+        skin_dict[self.Champions[index]] = skin_list
+        return skin_dict
+                
+    def Get_Champion_Skin_Image(self, champ_Index, skin_Index):
+        if champ_Index == 167:
+            ##print('Default isn\'t have a skin')
+            return
+        name = self.Champions[champ_Index]
+        path = './dragontail-14.7.1/img/champion/centered/' + name.lower() + '_' +str(self.Get_Champion_Skin_Dict(champ_Index)[name][skin_Index]) + '.png'
+        img = ImageTk.PhotoImage(Image.open(path).resize((200,100)))
+        return img
+    
+    def Get_Champion_Loading_Image(self, champ_Index, skin_Index):
+        if champ_Index == 167:
+            ##print('Default isn\'t have a skin')
+            return
+        name = self.Champions[champ_Index]
+        path = './dragontail-14.7.1/img/champion/loading/' + name.lower() + '_' +str(self.Get_Champion_Skin_Dict(champ_Index)[name][skin_Index]) + '.png'
+        img = ImageTk.PhotoImage(Image.open(path).resize((430, 600)))
+        return img
+    
+    def Get_Skin_Name(self, champ_Index):
+        if champ_Index == 167:
+            return
+        file = open("./dragontail-14.7.1/14.7.1/data/ko_KR/champion/" + self.Champions[champ_Index].lower() + ".json", encoding='UTF-8')
+        file = str(json.load(file))
+        i = file.find('skins')
+        j = file.find('lore',i)
+        file = file[i:j]
+        files = file.split(',')
+        result = []
+        for f in range(len(files)):
+            if files[f].find('name') != -1:
+                files[f] = files[f].replace(' ', '')
+                files[f] = files[f].replace('\'', '')
+                files[f] = files[f].replace('name', '')
+                files[f] = files[f].replace(':', '')
+                result.append(files[f])
+        
+        return result
+
+
+
+    def Nomalization_file_name(self, path):
+        file_list = os.listdir(path)
+        for f in file_list:
+            os.rename(path+f, path+f.lower())
+    
+    def Nomalization_file_extender(self, path, extender):
+        files = glob.glob(path + '*' + extender)
+        for f in files:
+            if not os.path.isdir(f):
+                src = os.path.splitext(f)
+                os.rename(f, src[0]+'.png')
+
+        
+
+if __name__ == '__main__':
+    loader = File_Loader()
+    window = tkinter.Tk()
+    loader.Get_Skin_Name(0)

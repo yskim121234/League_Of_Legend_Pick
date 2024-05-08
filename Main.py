@@ -3,10 +3,11 @@ import tkinter as tk
 from PIL import ImageTk, Image
 from functools import partial
 from random import *
-
+import sqlite3
 #챔피언 선택 프레임
 def Select_Frame():
-
+    if mode.get() >=2:
+        return
     # 최상위 프레임
     frame = tk.Frame(root, width=430, height=700, highlightbackground='black', highlightthickness= 1)
     frame.place(x=425, y=10)    
@@ -70,17 +71,74 @@ def Select_Frame():
     confirm = tk.Button(frame, text= '확정', command=Confirm,background='gray')
     confirm.place(x=-1, y=650, width=430, height=50)
 
+def Select_Skin():
+    if mode.get() < 2:
+        return
+    # 최상위 프레임
+    frame = tk.Frame(root, width=430, height=700, highlightbackground='black', highlightthickness= 1)
+    frame.place(x=425, y=10)
+
+    currpage = page.get()
+    player = champions[picked_Champions1[0]]
+    ####### 현재 스킨 #########
+    player.Set_Current_Skin(currpage-1)
+    curskin = tk.Label(frame, image= player.loading_Image,bg='black')
+    curskin.place(x=-1, y=-1, width=430)
+    ####### 스킨 리스트 #########
+    
+    select_frame = tk.Frame(frame, bg='gray')
+    select_frame.place(x=-1,y=500, width=430, height= 100)
+
+    skin_list = player.Skins[player.Name]
+
+
+    skin_label = tk.Label(select_frame, image= player.Current_Skin_Image)
+    skin_label.place(x=14, y=-1, width = 200, height = 100)
+
+    skin_name = tk.Label(select_frame, text= player.Skins_Name[player.Current_Skin], bg='gray')
+    skin_name.place(x=214, y=-1, width=200, height=100)
+    
+    #######  페이지 관리 ##########
+    pageframe = tk.Frame(frame, width=450, height=50, highlightbackground='black', highlightthickness=1, background='black')
+    pageframe.place(x=-1, y=600)
+
+    # 이전 버튼
+    prev = tk.Button(pageframe, text='이전', command= Prev, background='gray')
+    prev.place(x=-1, y=-1, width=100, height=50)
+
+    # 현재 페이지 표시
+    numbers = tk.Frame(pageframe,background='black')
+    numbers.place(x=100, y=-1, width=250, height=50)
+    pages = tk.Label(numbers, text=str(currpage) + '/' + str(len(skin_list)),background='gray')
+    pages.place(x=-1, y=-1, width=250, height=50)
+
+    # 다음 버튼
+    next = tk.Button(pageframe, text='다음', command= Next,background='gray')
+    next.place(x=350, y=-1, width=100, height=50)
+
+    #### 확정 버튼 ####
+    confirm = tk.Button(frame, text= '확정', command=Confirm,background='gray')
+    confirm.place(x=-1, y=650, width=430, height=50)
+    
 # 이전 버튼 바인드 함수
 def Prev():
     if page.get() > 1:
         page.set(page.get()-1)
-    Select_Frame()
+        if mode.get() < 2:
+            Select_Frame()
+        elif mode.get() == 2:
+            Select_Skin()
 
 # 다음 버튼 바인드 함수
 def Next():
-    if page.get() <5:
-        page.set(page.get()+1)
-    Select_Frame()
+    if mode.get() < 2:
+        if page.get() <5:
+            page.set(page.get()+1)
+        Select_Frame()
+    elif mode.get() == 2:
+        if page.get() < len(champions[picked_Champions1[0]].Skins[champions[picked_Champions1[0]].Name]):
+            page.set(page.get()+1)
+        Select_Skin()
 
 # 챔피언 버튼 바인드 함수
 def ChampionButton(index):
@@ -97,6 +155,7 @@ def Confirm():
     elif mode.get() == 1:
         Pick_Champion()
         mode.set(2)
+        Select_Skin()
     elif mode.get() == 2:
         Save_Data()
 
@@ -215,37 +274,31 @@ def Player_Frame():
         picked_Champions[i].place(x= 5 - 1, y= 5 - 1, width = 90, height = 90)
         picked_Champions[i+5].place(x= 296 , y= 5 - 1, width = 90, height = 90)
 
+
+
 def Save_Data():
-    file = open('./Result.txt', 'w')
-    file.write('{Blue Team Ban}\n')
-    for i in range(5):
-        if i < 4:
-            file.write(champions[bannded[i]].Name + ', ')
-        else:
-            file.write(champions[bannded[i]].Name + '\n')
+    database = sqlite3.connect('LoadingChmapionsInfo.db')
+    cursor = database.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS champions(team TEXT, name TEXT, skin INTEGER)''')
 
-    file.write('{Blue Team Pick}\n')
-    for i in range(5):
-        if i < 4:
-            file.write(champions[picked_Champions1[i]].Name + ', ')
-        else:
-            file.write(champions[picked_Champions1[i]].Name + '\n')
+    index = []
+    for c in picked_Champions1:
+        index.append(c)
+    for c in picked_Champions2:
+        index.append(c)
+    
+    n = 0
+    for i in index:
+        team = n // 5
+        n += 1
+        name = champions[i].Name
+        skin = champions[i].Current_Skin
+        cursor.execute("INSERT INTO champions (team, name, skin) VALUES (?, ?, ?)", (team, name, skin))
+    
+    database.commit()
+    database.close()
 
-    file.write('{Red Team Ban}\n')
-    for i in range(5):
-        if i < 4:
-            file.write(champions[bannded[i+5]].Name + ', ')
-        else:
-            file.write(champions[bannded[i+5]].Name + '\n')
-
-    file.write('{Red Team Pick}\n')
-    for i in range(5):
-        if i < 4:
-            file.write(champions[picked_Champions2[i]].Name + ', ')
-        else:
-            file.write(champions[picked_Champions2[i]].Name + '\n')
-    file.close()
-
+    window.destroy()
     
 
 
@@ -277,5 +330,8 @@ Ban_Frame()
 
 #### 챔피언 선택 단계 ####
 Player_Frame()
+
+#### 스킨 선택 단계 ####
+Select_Skin()
 
 root.mainloop()
