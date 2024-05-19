@@ -2,7 +2,8 @@ import json
 import os
 from PIL import ImageTk, Image
 import tkinter
-import glob
+import Normalizer
+
 #챔피언 정보 파일 읽어오고 문자열로 캐스팅
 with open('./dragontail-14.7.1/14.7.1/data/en_US/champion.json', encoding='UTF-8') as Champion_Info:
     Champion_Info = str(json.load(Champion_Info))
@@ -11,6 +12,19 @@ with open('./dragontail-14.7.1/14.7.1/data/en_US/champion.json', encoding='UTF-8
 class File_Loader:
 
     def __init__(self):
+        path = []
+        path.append('./dragontail-14.7.1/img/champion/loading/')
+        path.append('./dragontail-14.7.1/14.7.1/img/champion/')
+        names = {}
+        names['Renata'] = 'RenataGlasc'
+        names['MonkeyKing'] = 'Wukong'
+        for p in path:
+            for n in names.keys():
+                Normalizer.Replace_Name(p, n, names[n])
+            Normalizer.Normalization_file_name(p)
+            Normalizer.Normalization_file_extender(p, '.jpg', '.png')
+        del path
+        del names
         self.Champions = []
         self.Set_Champions()
 
@@ -134,21 +148,10 @@ class File_Loader:
 
 
 
-    def Nomalization_file_name(self, path):
-        file_list = os.listdir(path)
-        for f in file_list:
-            os.rename(path+f, path+f.lower())
-    
-    def Nomalization_file_extender(self, path, extender):
-        files = glob.glob(path + '*' + extender)
-        for f in files:
-            if not os.path.isdir(f):
-                src = os.path.splitext(f)
-                os.rename(f, src[0]+'.png')
 
-        
+
 
 if __name__ == '__main__':
     loader = File_Loader()
     window = tkinter.Tk()
-    loader.Get_Skin_Name(0)
+    loader.Nomalization_file_extender('./dragontail-14.7.1/img/champion/splash/', '.jpg')
